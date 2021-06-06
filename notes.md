@@ -1087,7 +1087,7 @@ public class DrawLintener implements MouseListener {
 }
 ```
 
-### 7.4.3 Recursion Rectangular
+### 7.4.3 Recursion 
 
 #### 7.4.3.1 Recursion
 
@@ -1170,5 +1170,379 @@ public class Main {
 	
 ```
 
+```javascript
+//	Random number:
+		Random random = new Random();
+	int rannum = random.nextInt(10);// 0-9 
+		// 从0开始 （包括 0）   到 10 不包括10	
+	
+	随机负数：-5 - 4 
+	int rannum = random.nextInt(10)-5;
 
+	随机： 5-15
+	int rannum = random.nextInt(10)+5;
+```
+
+```java
+//递归骰子
+	    void drawDice(Graphics g) {
+			java.util.Random random = new java.util.Random();
+			int ax, bx, cx, px, ay,by, cy,py;
+			int w = 800, h = 600;
+			ax = random.nextInt(w);
+			bx = random.nextInt(w);
+			cx = random.nextInt(w);
+			px = random.nextInt(w);
+			
+			ay = random.nextInt(h);
+			by = random.nextInt(h);
+			cy = random.nextInt(h);
+			py = random.nextInt(h);
+			
+			for (int i = 0; i < 10000; i++) {
+				int tempx = 0;
+				int tempy = 0;
+				int r = random.nextInt(3);
+				
+				if(r == 0) {
+					tempx = (ax + px)/2;
+					tempy = (ay + py)/2;
+			        g.drawLine(tempx, tempy, tempx, tempy);
+				} else if (r == 1) {
+					tempx = (bx + px)/2;
+					tempy = (by + py)/2;
+				} else if (r == 2) {
+					tempx = (cx + px)/2;
+					tempy = (cy + py)/2;
+				}
+				px = tempx;
+				py = tempy;
+				
+			}
+		}
+```
+
+```Java
+// 递归分形
+void drawIfs(Graphics g,int localX, int localY) {
+	    	double a = -1.8, b = -2.0, c = -0.5, d = -0.9;
+			double x = 0, y = 0;
+			
+			for (int i = 0; i < 50000; i++) {
+				double tempx = Math.sin(a * y) + c * Math.cos(a * x);
+				double tempy = Math.sin(b * x) + d * Math.cos(b * y);
+				
+				x = tempx;
+				y = tempy;
+				
+				int px = (int)(tempx * 100) + localX;
+				int py = (int)(tempy * 100) + localY;
+				g.drawLine(px, py, px, py);
+			}
+	    }
+	    void drawMyRect(Graphics g, int x, int y, int w,int h) {
+	    	if (w <  30) {
+	    		return;
+	    	}
+	    	g.fillRect(x + w / 3, y + h /3, w / 3, h / 3);
+	    	drawMyRect(g, x + w / 3, y + h / 3, w / 3, h / 3);
+	    	drawMyRect(g, x + 2 * (w / 3), y + 2 * (w / 3), w / 3, h / 3);
+	    }
+```
+
+### 7.4.4 重绘保存
+
+```
+  直线： 两个端点坐标
+	矩形：按下 释放 坐标 
+	圆：		按下 释放 坐标 
+	递归矩形： 按下 释放 坐标 
+	迭代分形： 按下的坐标
+	骰子分形： 最开始的随机八个坐标值 
+```
+
+方法： 绘制图形的方式 
+
+- 将图形创建为一个类，作为对象保存所有数据	
+- 将图形对象存入数组中，然后在 重写 JFrame 的 paint方法中绘制出来 
+
+```java
+package cathy0604;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+/**
+ *  继承 JFrame 才可以重写刷新方法 paint 
+ *  在绘制窗体本身之余（super.paint(g);），也绘制我们自己保存的图形
+ * @author Administrator
+ *
+ */
+public class DrawPad extends JFrame {
+ final static long serialVersionUID = 1;
+ String[] btnstrs= {"直线","矩形","圆","递归分形","迭代分形","骰子图形"};
+ Shape[] shapes;// 保存图形数组 
+ DrawLintener dl = new DrawLintener();// 全局的鼠标  动作监听器  
+ public void initUI() {
+  // JFrame jf = new JFrame();// 换成 继承的方式 
+  setTitle("图形图像绘制");
+  setSize(800, 600);
+  setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+  // 流式布局
+  FlowLayout fl = new FlowLayout();
+  setLayout(fl);
+   
+  // 遍历创建按钮 
+  for (int i = 0; i < btnstrs.length; i++) {
+   JButton btn = new JButton(btnstrs[i]);
+   add(btn);
+   btn.addActionListener(dl);
+  }
+  setVisible(true);
+  // 按钮 动作监听
+  
+  // 窗体 鼠标监听
+  addMouseListener(dl);
+
+  // 获取 Graphcis 画笔
+  dl.g = getGraphics();
+  System.out.println("画笔：" + dl.g);
+ }
+ /**
+  *  可视化 以及改变窗体大小的时候 自动调用 
+  */
+ int count=0;
+ @Override // 重写注解 防止重写失误
+ public void paint(Graphics g) {
+  super.paint(g);
+  
+  shapes = dl.shapes;// 将 监听器中的 数组对象引用 赋值给 shapes 
+  //将存储的图形  -- 刷新时再绘制 绘制图形
+  System.out.println("paint"+count++);
+  for (int i = 0; i < shapes.length; i++) {
+   Shape shape = shapes[i];
+   if(shape==null) {
+    return;
+   }
+   shape.drawShape(g);
+  }
+ }
+ public static void main(String[] args) {
+  DrawPad dp = new DrawPad();
+  dp.initUI();
+ }
+}
+```
+
+```java
+package cathy0604;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
+public class DrawLintener implements MouseListener, ActionListener {
+	// 坐标
+	int x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;
+	Graphics g;
+	String btnstr = "";
+
+	// 存储图形的数组
+	Shape[] shapes = new Shape[100];
+	int size = 0;
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		// 获取按钮字符串
+		btnstr = e.getActionCommand();
+	}
+
+	public void mouseClicked(MouseEvent e) {
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		x1 = e.getX();
+		y1 = e.getY();
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		x2 = e.getX();
+		y2 = e.getY();
+		// 绘制图形
+		Shape shape = new Shape(btnstr, x1, y1, x2, y2, Color.BLACK);
+		shape.drawShape(g);
+
+		// 存储图形对象
+		shapes[size] = shape;//shapes[size++] = shape;
+		size++;
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+	}
+}
+```
+
+```java
+package cathy0604;
+
+import java.awt.Color;
+import java.awt.Graphics;
+
+public class Shape {
+	String shapeType="";
+	int x1,y1,x2,y2;
+	Color color=Color.BLACK;
+	// 构造方法 
+	/**
+	 * 直线  矩形 圆 递归矩形 
+	 * @param shapeType
+	 * @param x1
+	 * @param y1
+	 * @param x2
+	 * @param y2
+	 * @param color
+	 */
+	public Shape(String shapeType, int x1, int y1, int x2, int y2, Color color) {
+		this.shapeType = shapeType;
+		this.x1 = x1;
+		this.y1 = y1;
+		this.x2 = x2;
+		this.y2 = y2;
+		this.color = color;
+	}
+	/**
+	 * 	迭代分形
+	 * @param shapeType
+	 * @param x1
+	 * @param y1
+	 * @param color
+	 */
+	public Shape(String shapeType, int x1, int y1,Color color) {
+		this.shapeType = shapeType;
+		this.x1 = x1;
+		this.y1 = y1;
+		this.color = color;
+	}
+	
+	
+	// 绘制图形的方法 
+	public void drawShape(Graphics g) {
+		g.setColor(color);
+		if (shapeType.equals("直线")) {
+			g.drawLine(x1, y1, x2, y2);
+		} else if (shapeType.equals("矩形")) {
+		// 矩形 矩形的左上角  宽 高 
+			g.drawRect(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+		} else if (shapeType.equals("圆")) {
+			// // 圆形 外切矩形的左上角 宽 高
+			g.drawOval(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1));
+		} else if (shapeType.equals("迭代分形")) {
+			drawIfs(g,x1,y1);// 绘制迭代分形
+		} else if (shapeType.equals("递归分形")) {
+			drawMyRect(g,Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2-x1), Math.abs(y2-y1));
+		}else if(shapeType.equals("骰子图形")) {
+			drawDiceShape(g);// 绘制随机骰子图形
+		}
+		
+	}
+	// 迭代
+
+		// 绘制随机骰子图形
+		void drawDiceShape(Graphics g) {
+			// 随机四个点 坐标
+			java.util.Random random = new java.util.Random();
+			int ax, bx, cx, px, ay, by, cy, py;
+			int w = 800, h = 600;
+			ax = random.nextInt(w);// 宽高 600
+			bx = random.nextInt(w);
+			cx = random.nextInt(w);
+			px = random.nextInt(w);
+			ay = random.nextInt(h);// 宽高 600
+			by = random.nextInt(h);
+			cy = random.nextInt(h);
+			py = random.nextInt(h);
+
+			for (int i = 0; i < 10000; i++) {
+				int tempx = 0;
+				int tempy = 0;
+				int r = random.nextInt(3);// 骰子 从ABC中随机取一个点
+
+				if (r == 0) {
+					// 取中点
+					tempx = (ax + px) / 2;
+					tempy = (ay + py) / 2;
+					// 绘制出来
+					g.drawLine(tempx, tempy, tempx, tempy);
+				} else if (r == 1) {
+					tempx = (bx + px) / 2;
+					tempy = (by + py) / 2;
+					// 绘制出来
+				} else if (r == 2) {
+					tempx = (cx + px) / 2;
+					tempy = (cy + py) / 2;
+					// 绘制出来
+				}
+				// 迭代 p 点
+				px = tempx;
+				py = tempy;
+//				System.out.println("p=" + px);
+			}
+		}
+
+		// 迭代分形
+		void drawIfs(Graphics g,int localX,int localY) {
+			double a = -1.8, b = -2.0, c = -0.5, d = -0.9;
+			double x = 0, y = 0;
+
+			for (int i = 0; i < 50000; i++) {
+				double tempx = Math.sin(a * y) + c * Math.cos(a * x);
+				double tempy = Math.sin(b * x) + d * Math.cos(b * y);
+				x = tempx;
+				y = tempy;
+//				System.out.println("x=" + x + " y = " + y);
+				// 放大
+				int px = (int) (tempx * 80) + localX;
+				int py = (int) (tempy * 80) + localY;
+				g.drawLine(px, py, px, py);// drawLine 需要的参数是 int类型 像素是整的
+
+			}
+
+		}
+
+		/**
+		 * 递归矩形
+		 * 
+		 * @param x
+		 * @param y
+		 * @param w
+		 * @param h 1、当 w < 3 的时候 就停止 方法执行 2、自己加个count 变量 控制递归层数 结束方法执行 return
+		 */
+		public void drawMyRect(Graphics g,int x, int y, int w, int h) {
+			if (w < 30) {
+				return;
+			}
+
+//			g.drawRect(x, y, w, h);
+			g.fillRect(x + w / 3, y + h / 3, w / 3, h / 3);
+			// 第一层
+			drawMyRect(g,x, y, w / 3, h / 3);
+			drawMyRect(g,x + w / 3, y, w / 3, h / 3);
+			drawMyRect(g,x + 2 * (w / 3), y, w / 3, h / 3);
+		}
+}
+```
 
